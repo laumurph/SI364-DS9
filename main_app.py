@@ -32,8 +32,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 manager = Manager(app)
 # moment = Moment(app) # For time # Later
 db = SQLAlchemy(app) # For database use
-
-
+migrate = Migrate(app, db) # For database use/updating
+manager.add_command('db', MigrateCommand) # Add migrate command to manager
+def make_shell_context():
+    return dict(app=app, db=db, Album=Album, Artist=Artist, Song=Song) ## TODO SI364: Add your models to this shell context function so you can use them in the shell
+manager.add_command("shell", Shell(make_context=make_shell_context))
 #########
 ######### Everything above this line is important/useful setup, not problem-solving.
 #########
@@ -49,6 +52,7 @@ class Album(db.Model):
     name = db.Column(db.String(64))
     artists = db.relationship('Artist',secondary=collections,backref=db.backref('albums',lazy='dynamic'),lazy='dynamic')
     songs = db.relationship('Song',backref='Album')
+    producers = db.Column(db.String(64))
 
 
 class Artist(db.Model):
@@ -66,6 +70,7 @@ class Song(db.Model):
     album_id = db.Column(db.Integer, db.ForeignKey("albums.id"))
     artist_id = db.Column(db.Integer, db.ForeignKey("artists.id"))
     genre = db.Column(db.String(64))
+    rating = db.Column(db.Float)
 
     def __repr__(self):
         return "{}, genre : {}".format(self.title, self.genre)
